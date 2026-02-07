@@ -63,9 +63,9 @@ begin
   
   process(clk)
     variable temp : signed(DATA_WIDTH*3-1 downto 0);
-    variable real_part : signed(DATA_WIDTH*2-1 downto 0);
-    variable imag_part : signed(DATA_WIDTH*2-1 downto 0);
-    variable mag_sq : unsigned(DATA_WIDTH*4-1 downto 0);
+    variable s1_sq : signed(DATA_WIDTH*4-1 downto 0);
+    variable s2_sq : signed(DATA_WIDTH*4-1 downto 0);
+    variable mag_sq : signed(DATA_WIDTH*4-1 downto 0);
   begin
     if rising_edge(clk) then
       if rst = '1' then
@@ -116,13 +116,18 @@ begin
             
           when CALCULATE_MAGNITUDE =>
             -- Calculate magnitude: |X(k)|^2 = s1^2 + s2^2 - coeff*s1*s2
-            temp := s1 * s2;
-            real_part := s1(DATA_WIDTH*2-1 downto DATA_WIDTH/2);
-            imag_part := s2(DATA_WIDTH*2-1 downto DATA_WIDTH/2);
-            
             -- Simplified magnitude calculation (sum of squares)
-            mag_sq := unsigned(s1 * s1 + s2 * s2);
-            magnitude_reg <= mag_sq(DATA_WIDTH*3-1 downto DATA_WIDTH*2);
+            s1_sq := s1 * s1;
+            s2_sq := s2 * s2;
+            mag_sq := s1_sq + s2_sq;
+            
+            -- Take appropriate bits and convert to unsigned
+            if mag_sq >= 0 then
+              -- Extract normalized magnitude (scale down from squared value)
+              magnitude_reg <= unsigned(mag_sq(DATA_WIDTH*3-1 downto DATA_WIDTH));
+            else
+              magnitude_reg <= (others => '0');
+            end if;
             
             valid_out_reg <= '1';
             processing <= '0';

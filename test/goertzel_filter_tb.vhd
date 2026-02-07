@@ -89,7 +89,7 @@ begin
     
     -- For testing, use coefficient for detecting frequency bin k=10 in N=100
     -- coeff = 2*cos(2*pi*k/N) = 2*cos(2*pi*10/100) = 2*cos(pi/5)
-    -- Scaled to fixed point: 2*cos(pi/5) * 2^14 ≈ 1.618 * 16384 ≈ 26509
+    -- Scaled to fixed point: 2*cos(pi/5) * 2^14 ~= 1.618 * 16384 ~= 26509
     coeff <= to_signed(26509, COEFF_WIDTH);
     
     wait for CLK_PERIOD * 5;

@@ -1,0 +1,34 @@
+{
+  "name": "VHDL Development Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vhdl.vhdl",
+        "mshr-h.veriloghdl",
+        "puorc.awesome-vhdl"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.associations": {
+          "*.vhd": "vhdl",
+          "*.vhdl": "vhdl"
+        }
+      }
+    }
+  },
+  
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  
+  "workspaceFolder": "/workspace",
+  
+  "postCreateCommand": "ghdl --version && echo 'Development environment ready!'",
+  
+  "remoteUser": "vscode"
+}

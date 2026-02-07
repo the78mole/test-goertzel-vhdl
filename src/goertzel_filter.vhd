@@ -1,0 +1,136 @@
+-------------------------------------------------------------------------------
+-- Title      : Goertzel Filter
+-- Project    : test-goertzel-vhdl
+-------------------------------------------------------------------------------
+-- File       : goertzel_filter.vhd
+-- Author     : 
+-- Company    : 
+-- Created    : 2026-02-07
+-- Last update: 2026-02-07
+-- Platform   : 
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: Parametrizable digital filter using the Goertzel algorithm.
+--              The Goertzel algorithm is an efficient method for detecting
+--              specific frequency components in a signal, similar to computing
+--              a single bin of a DFT.
+-------------------------------------------------------------------------------
+-- License    : See LICENSE file
+-------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity goertzel_filter is
+  generic (
+    DATA_WIDTH    : integer := 16;    -- Input data width
+    COEFF_WIDTH   : integer := 16;    -- Coefficient width
+    SAMPLE_COUNT  : integer := 100    -- Number of samples (N)
+  );
+  port (
+    clk           : in  std_logic;
+    rst           : in  std_logic;
+    enable        : in  std_logic;
+    data_in       : in  signed(DATA_WIDTH-1 downto 0);
+    data_valid_in : in  std_logic;
+    coeff         : in  signed(COEFF_WIDTH-1 downto 0);  -- 2*cos(2*pi*k/N)
+    
+    magnitude_out : out unsigned(DATA_WIDTH*2-1 downto 0);
+    data_valid_out: out std_logic;
+    busy          : out std_logic
+  );
+end entity goertzel_filter;
+
+architecture rtl of goertzel_filter is
+  
+  -- Internal signals for Goertzel algorithm
+  signal s0, s1, s2       : signed(DATA_WIDTH*2-1 downto 0);
+  signal sample_counter   : integer range 0 to SAMPLE_COUNT;
+  signal processing       : std_logic;
+  signal magnitude_reg    : unsigned(DATA_WIDTH*2-1 downto 0);
+  signal valid_out_reg    : std_logic;
+  
+  -- State machine
+  type state_type is (IDLE, PROCESSING_SAMPLES, CALCULATE_MAGNITUDE);
+  signal state : state_type;
+  
+begin
+  
+  busy <= processing;
+  magnitude_out <= magnitude_reg;
+  data_valid_out <= valid_out_reg;
+  
+  process(clk)
+    variable temp : signed(DATA_WIDTH*3-1 downto 0);
+    variable real_part : signed(DATA_WIDTH*2-1 downto 0);
+    variable imag_part : signed(DATA_WIDTH*2-1 downto 0);
+    variable mag_sq : unsigned(DATA_WIDTH*4-1 downto 0);
+  begin
+    if rising_edge(clk) then
+      if rst = '1' then
+        s0 <= (others => '0');
+        s1 <= (others => '0');
+        s2 <= (others => '0');
+        sample_counter <= 0;
+        processing <= '0';
+        state <= IDLE;
+        magnitude_reg <= (others => '0');
+        valid_out_reg <= '0';
+        
+      else
+        -- Default values
+        valid_out_reg <= '0';
+        
+        case state is
+          
+          when IDLE =>
+            if enable = '1' then
+              s0 <= (others => '0');
+              s1 <= (others => '0');
+              s2 <= (others => '0');
+              sample_counter <= 0;
+              processing <= '1';
+              state <= PROCESSING_SAMPLES;
+            end if;
+            
+          when PROCESSING_SAMPLES =>
+            if data_valid_in = '1' then
+              -- Goertzel iteration: s(n) = x(n) + coeff * s(n-1) - s(n-2)
+              -- temp = coeff * s1
+              temp := s1 * coeff;
+              -- s0 = data_in + (temp >> COEFF_WIDTH) - s2
+              s0 <= resize(data_in, DATA_WIDTH*2) + 
+                    resize(temp(DATA_WIDTH*3-1 downto COEFF_WIDTH), DATA_WIDTH*2) - s2;
+              
+              -- Shift pipeline
+              s2 <= s1;
+              s1 <= s0;
+              
+              sample_counter <= sample_counter + 1;
+              
+              if sample_counter = SAMPLE_COUNT - 1 then
+                state <= CALCULATE_MAGNITUDE;
+              end if;
+            end if;
+            
+          when CALCULATE_MAGNITUDE =>
+            -- Calculate magnitude: |X(k)|^2 = s1^2 + s2^2 - coeff*s1*s2
+            temp := s1 * s2;
+            real_part := s1(DATA_WIDTH*2-1 downto DATA_WIDTH/2);
+            imag_part := s2(DATA_WIDTH*2-1 downto DATA_WIDTH/2);
+            
+            -- Simplified magnitude calculation (sum of squares)
+            mag_sq := unsigned(s1 * s1 + s2 * s2);
+            magnitude_reg <= mag_sq(DATA_WIDTH*3-1 downto DATA_WIDTH*2);
+            
+            valid_out_reg <= '1';
+            processing <= '0';
+            state <= IDLE;
+            
+        end case;
+      end if;
+    end if;
+  end process;
+  
+end architecture rtl;

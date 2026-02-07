@@ -1,0 +1,37 @@
+name: VHDL Tests
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Install GHDL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ghdl
+        
+    - name: Verify GHDL installation
+      run: ghdl --version
+      
+    - name: Check VHDL syntax
+      run: make check
+      
+    - name: Run tests
+      run: make test
+      
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: build/
+        retention-days: 7

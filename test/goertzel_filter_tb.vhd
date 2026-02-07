@@ -80,6 +80,64 @@ begin
   -- Stimulus process
   stim_process: process
     variable sample : integer;
+    variable mag_target : unsigned(DATA_WIDTH*2-1 downto 0) := (others => '0');
+    variable mag_freq : unsigned(DATA_WIDTH*2-1 downto 0);
+    variable mag_high : integer;
+    variable mag_low : integer;
+    
+    -- Procedure to test a specific frequency
+    procedure test_frequency(
+      constant freq_bin : integer;
+      constant amplitude : real;
+      constant test_name : string
+    ) is
+    begin
+      report "Testing " & test_name & " (frequency bin k=" & integer'image(freq_bin) & ")...";
+      
+      -- Reset
+      rst <= '1';
+      wait for CLK_PERIOD * 2;
+      rst <= '0';
+      wait for CLK_PERIOD * 2;
+      
+      -- Enable filter
+      enable <= '1';
+      wait for CLK_PERIOD;
+      enable <= '0';
+      wait for CLK_PERIOD * 2;
+      
+      -- Generate and feed samples of a sine wave at the test frequency
+      for i in 0 to SAMPLE_COUNT-1 loop
+        sample := integer(amplitude * sin(2.0 * MATH_PI * real(freq_bin) * real(i) / real(SAMPLE_COUNT)));
+        data_in <= to_signed(sample, DATA_WIDTH);
+        data_valid_in <= '1';
+        wait for CLK_PERIOD;
+      end loop;
+      
+      data_valid_in <= '0';
+      
+      -- Wait for processing to complete
+      wait until data_valid_out = '1' for 1 ms;
+      
+      if data_valid_out = '1' then
+        mag_freq := magnitude_out;
+        -- Split into high and low parts to avoid overflow
+        mag_high := to_integer(mag_freq(DATA_WIDTH*2-1 downto 16));
+        mag_low := to_integer(mag_freq(15 downto 0));
+        report test_name & " - Magnitude [HEX] = 0x" & 
+               integer'image(mag_high) & "_" & integer'image(mag_low);
+        
+        -- Store target frequency magnitude for comparison
+        if freq_bin = 10 then
+          mag_target := mag_freq;
+        end if;
+      else
+        report "FAILED: No valid output received for " & test_name severity error;
+      end if;
+      
+      wait for CLK_PERIOD * 10;
+    end procedure;
+    
   begin
     -- Initialize
     rst <= '1';
@@ -96,43 +154,31 @@ begin
     rst <= '0';
     wait for CLK_PERIOD * 2;
     
-    report "Starting Goertzel filter test...";
+    report "===============================================";
+    report "Starting Goertzel filter frequency tests...";
+    report "Target frequency bin: k=10 (out of N=100)";
+    report "===============================================";
     
-    -- Test 1: Process a simple sine wave at the target frequency
-    enable <= '1';
-    wait for CLK_PERIOD;
-    enable <= '0';
+    -- Test 1: Target frequency (should have highest magnitude)
+    test_frequency(10, 1000.0, "Target Frequency (INSIDE bin)");
     
-    wait for CLK_PERIOD * 2;
+    -- Test 2: Lower frequency outside bin
+    test_frequency(5, 1000.0, "Lower Frequency (OUTSIDE bin)");
     
-    -- Generate and feed 100 samples of a sine wave
-    for i in 0 to SAMPLE_COUNT-1 loop
-      -- Simple sine wave approximation (values between -1000 and 1000)
-      sample := integer(1000.0 * sin(2.0 * MATH_PI * 10.0 * real(i) / real(SAMPLE_COUNT)));
-      data_in <= to_signed(sample, DATA_WIDTH);
-      data_valid_in <= '1';
-      wait for CLK_PERIOD;
-    end loop;
+    -- Test 3: Higher frequency outside bin
+    test_frequency(15, 1000.0, "Higher Frequency (OUTSIDE bin)");
     
-    data_valid_in <= '0';
+    -- Test 4: Much higher frequency outside bin
+    test_frequency(20, 1000.0, "Much Higher Frequency (OUTSIDE bin)");
     
-    -- Wait for processing to complete
-    wait until data_valid_out = '1' for 1 ms;
+    -- Test 5: Low frequency outside bin
+    test_frequency(2, 1000.0, "Low Frequency (OUTSIDE bin)");
     
-    if data_valid_out = '1' then
-      report "Test PASSED: Magnitude output = " & 
-             integer'image(to_integer(magnitude_out));
-      assert magnitude_out > 0 
-        report "FAILURE: Expected non-zero magnitude" 
-        severity error;
-    else
-      report "Test FAILED: No valid output received" severity error;
-    end if;
+    -- Test 6: Very high frequency outside bin
+    test_frequency(30, 1000.0, "Very High Frequency (OUTSIDE bin)");
     
-    wait for CLK_PERIOD * 10;
-    
-    -- Test 2: Process DC signal (should produce low output)
-    report "Testing DC signal...";
+    -- Test 7: Process DC signal (should produce low output)
+    report "Testing DC signal (k=0, OUTSIDE bin)...";
     rst <= '1';
     wait for CLK_PERIOD * 2;
     rst <= '0';
@@ -154,13 +200,31 @@ begin
     wait until data_valid_out = '1' for 1 ms;
     
     if data_valid_out = '1' then
-      report "DC Test: Magnitude output = " & 
-             integer'image(to_integer(magnitude_out));
+      mag_freq := magnitude_out;
+      mag_high := to_integer(mag_freq(DATA_WIDTH*2-1 downto 16));
+      mag_low := to_integer(mag_freq(15 downto 0));
+      report "DC Test (k=0) - Magnitude [HEX] = 0x" & 
+             integer'image(mag_high) & "_" & integer'image(mag_low);
     end if;
     
     wait for CLK_PERIOD * 10;
     
-    report "All tests completed!";
+    -- Final validation
+    report "===============================================";
+    report "Test Summary:";
+    mag_high := to_integer(mag_target(DATA_WIDTH*2-1 downto 16));
+    mag_low := to_integer(mag_target(15 downto 0));
+    report "Target frequency (k=10) magnitude [HEX]: 0x" & 
+           integer'image(mag_high) & "_" & integer'image(mag_low);
+    report "Expected: Target frequency should have significantly higher magnitude";
+    report "         than frequencies outside the bin.";
+    report "===============================================";
+    
+    assert mag_target > 0 
+      report "FAILURE: Target frequency magnitude should be non-zero" 
+      severity error;
+    
+    report "All frequency tests completed!";
     test_done <= true;
     wait;
   end process;

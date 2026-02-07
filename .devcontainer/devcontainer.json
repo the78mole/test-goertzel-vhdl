@@ -11,7 +11,8 @@
         "vide-software.v4pvhdlforprofessionals",
         "mshr-h.veriloghdl",
         "puorc.awesome-vhdl",
-        "surfer-project.surfer"
+        "surfer-project.surfer",
+        "github.vscode-github-actions"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",

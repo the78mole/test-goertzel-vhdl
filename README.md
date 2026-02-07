@@ -71,6 +71,8 @@ This project includes a devcontainer configuration for Visual Studio Code. To us
 3. Click "Reopen in Container" when prompted
 4. The development environment will be automatically set up with all required tools
 
+The devcontainer includes the **Surfer** extension for viewing waveforms directly in VS Code, which is particularly useful when working in GitHub Codespaces or remote environments.
+
 ### Building and Testing
 
 ```bash
@@ -85,6 +87,9 @@ make run
 
 # View waveforms (after running 'make run')
 gtkwave build/wave.ghw
+
+# Or use the Surfer extension in VS Code (ideal for Codespaces)
+# Open build/wave.ghw directly in VS Code with the Surfer extension
 
 # Clean build artifacts
 make clean

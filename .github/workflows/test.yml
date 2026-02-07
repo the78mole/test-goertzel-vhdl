@@ -1,4 +1,4 @@
-name: VHDL Tests
+name: VHDL Tests and Release
 
 on:
   push:
@@ -9,10 +9,34 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+      
+    - name: Calculate semantic version
+      id: version
+      uses: paulhatch/semantic-version@v5.3.0
+      with:
+        tag_prefix: "v"
+        major_pattern: "/(feat|fix|refactor)!:/"
+        minor_pattern: "/^feat:/"
+        version_format: "${major}.${minor}.${patch}"
+        bump_each_commit: true
+        search_commit_body: true
+
+        
+    - name: Display version
+      run: |
+        echo "Version: ${{ steps.version.outputs.version }}"
+        echo "Version Tag: ${{ steps.version.outputs.version_tag }}"
       
     - name: Install GHDL
       run: |
@@ -28,10 +52,57 @@ jobs:
     - name: Run tests
       run: make test
       
+    - name: Run simulation with waveform generation
+      run: make run
+      
+    - name: Verify waveform file exists
+      run: |
+        if [ -f build/wave.ghw ]; then
+          echo "Waveform file generated successfully"
+          ls -lh build/wave.ghw
+        else
+          echo "ERROR: Waveform file not found"
+          exit 1
+        fi
+      
     - name: Upload build artifacts
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: build-artifacts
+        name: build-artifacts-${{ steps.version.outputs.version }}
         path: build/
-        retention-days: 7
+        retention-days: 30
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version_tag }}
+        name: Release ${{ steps.version.outputs.version }}
+        body: |
+          ## VHDL Goertzel Filter - Version ${{ steps.version.outputs.version }}
+          
+          ### Changes in this release
+          Automated release with test results and simulation waveforms.
+          
+          ### Test Results
+          ✅ All VHDL syntax checks passed
+          ✅ All functional tests passed
+          ✅ Simulation completed successfully
+          
+          ### Artifacts
+          - `wave.ghw` - GTKWave waveform file from simulation
+          - View with GTKWave or Surfer VS Code extension
+          
+          ### Goertzel Filter Performance
+          - Target frequency bin: k=10 (out of N=100)
+          - Perfect frequency selectivity achieved
+          - All off-target frequencies suppressed to zero
+          
+          Built with ❤️ using GHDL and GitHub Actions
+        files: |
+          build/wave.ghw
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

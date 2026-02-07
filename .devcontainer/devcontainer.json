@@ -8,9 +8,10 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "vhdl.vhdl",
+        "vide-software.v4pvhdlforprofessionals",
         "mshr-h.veriloghdl",
-        "puorc.awesome-vhdl"
+        "puorc.awesome-vhdl",
+        "surfer-project.surfer"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",

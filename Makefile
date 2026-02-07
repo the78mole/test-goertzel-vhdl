@@ -50,8 +50,9 @@ test: analyze
 # Check syntax only
 check: $(BUILD_DIR)
 	@echo "Checking syntax..."
-	$(GHDL) -s $(GHDL_FLAGS) $(VHDL_SOURCES)
-	$(GHDL) -s $(GHDL_FLAGS) $(VHDL_TESTBENCHES)
+	$(GHDL) -a $(GHDL_FLAGS) $(VHDL_SOURCES)
+	$(GHDL) -a $(GHDL_FLAGS) $(VHDL_TESTBENCHES)
+	@echo "Syntax check passed!"
 
 # Clean build artifacts
 clean:

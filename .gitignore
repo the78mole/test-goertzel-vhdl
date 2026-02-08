@@ -26,3 +26,6 @@ e~*.o
 *.tmp
 *.bak
 *.log
+
+# Generated diagrams (created from simulation output)
+# Kept: docs/timing_diagram*.json (legacy/optional)

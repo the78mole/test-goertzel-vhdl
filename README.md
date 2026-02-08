@@ -36,12 +36,16 @@ For a detailed explanation of the algorithm, see [docs/GOERTZEL.md](docs/GOERTZE
 ├── test/                   # Testbenches
 │   └── goertzel_filter_tb.vhd
 ├── docs/                   # Documentation
-│   └── GOERTZEL.md         # Detailed algorithm description
+│   ├── GOERTZEL.md         # Detailed algorithm description
+│   ├── timing_diagram_*.json (legacy) # Optional WaveDrom sources
+├── scripts/                # Automation scripts
+│   ├── generate_waveforms.py   # Creates diagrams from simulation
+│   └── generate_diagram.py     # Legacy WaveDrom generator
 ├── .devcontainer/          # Development container configuration
 │   ├── Dockerfile          # Container image definition
 │   └── devcontainer.json   # VS Code devcontainer config
 ├── .github/workflows/      # CI/CD workflows
-│   └── test.yml            # Automated testing workflow
+│   └── test.yml            # Automated testing and release workflow
 └── Makefile                # Build and test automation
 
 ```
@@ -121,12 +125,73 @@ goertzel_inst: entity work.goertzel_filter
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration. Every push and pull request triggers:
+This project uses GitHub Actions for continuous integration and automated releases. Every push and pull request triggers:
 - VHDL syntax checking
-- Automated test execution
+- Automated test execution with multiple frequency scenarios
+- Simulation with waveform generation
+- Timing diagram generation (WaveDrom)
 - Artifact generation
 
-## Contributing
+### Automated Releases
+
+On every push to `main`, the workflow automatically:
+- Calculates semantic version (using conventional commits: `feat:`, `fix:`, breaking changes with `!`)
+- Runs all tests and simulations
+- Generates timing diagrams as PNG
+- Creates a GitHub Release with:
+  - Test results summary
+  - GTKWave waveform file (`wave.ghw`)
+  - Timing diagram visualization (`timing_diagram.png`)
+  - Performance metrics
+
+View the latest release to download waveforms and timing diagrams!
+
+## Timing Diagrams
+
+The project automatically generates publication-quality timing diagrams from **actual simulation output** using matplotlib. Unlike static diagrams, these show real waveforms extracted from the GHDL simulation.
+
+### Available Diagrams
+
+All diagrams are generated from running the test suite and show:
+
+1. **Overview** 
+   - Complete operation cycle with state machine
+   - Data flow control signals
+   - Generated from full 100-sample simulation
+
+2. **Target Frequency Test (k=10)**
+   - **Analog waveform** of input sine wave at target frequency
+   - Shows actual sample values: +309, +587, +809, +951, +1000, ...
+   - Output: Maximum magnitude = 0x38150 (229,712 decimal)
+   - Demonstrates perfect frequency detection ✓
+
+3. **Off-Target Frequency Test (k=5)**
+   - **Analog waveform** of input sine wave at different frequency
+   - Shows different sample pattern
+   - Output: Zero magnitude (perfect suppression) ✓
+
+4. **DC Signal Test**
+   - **Constant analog level** at +500
+   - Demonstrates DC blocking
+   - Output: Zero magnitude (DC rejected) ✓
+
+### Features
+
+✅ **Real simulation data** - Not manually created
+✅ **Analog waveforms** - data_in displayed as continuous signals with actual values
+✅ **Publication quality** - 150 DPI, 16" wide, professional appearance
+✅ **Annotated results** - Each diagram shows expected vs actual magnitude
+✅ **Automatically generated** - Created on every `make diagram` run
+
+### Generate Diagrams Locally
+
+```bash
+make diagram    # Runs simulation, then generates all diagrams
+```
+
+Requirements: Python 3 with matplotlib and numpy (installed automatically in devcontainer)
+
+The diagrams are automatically included in GitHub releases with embedded images.
 
 Contributions are welcome! Please ensure that:
 - Code follows the existing style

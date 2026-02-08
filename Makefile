@@ -16,7 +16,7 @@ VHDL_SOURCES = $(SRC_DIR)/goertzel_filter.vhd
 VHDL_TESTBENCHES = $(TEST_DIR)/goertzel_filter_tb.vhd
 
 # Targets
-.PHONY: all clean test analyze elaborate run
+.PHONY: all clean test analyze elaborate run diagram
 
 all: test
 
@@ -54,6 +54,22 @@ check: $(BUILD_DIR)
 	$(GHDL) -a $(GHDL_FLAGS) $(VHDL_TESTBENCHES)
 	@echo "Syntax check passed!"
 
+# Generate timing diagram
+diagram: $(BUILD_DIR) run
+	@echo "Generating timing diagrams from simulation output..."
+	@if command -v python3 &> /dev/null; then \
+		if python3 -c "import matplotlib" 2>/dev/null; then \
+			python3 scripts/generate_waveforms.py; \
+		else \
+			echo "ERROR: matplotlib not installed."; \
+			echo "Install with: pip3 install matplotlib numpy"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "ERROR: Python3 not found."; \
+		exit 1; \
+	fi
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
@@ -69,5 +85,6 @@ help:
 	@echo "  run       - Run simulation with waveform generation"
 	@echo "  test      - Run tests without waveform (for CI)"
 	@echo "  check     - Check VHDL syntax"
+	@echo "  diagram   - Generate all timing diagrams (PNG + SVG)"
 	@echo "  clean     - Remove build artifacts"
 	@echo "  help      - Show this help message"

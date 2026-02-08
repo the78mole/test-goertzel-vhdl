@@ -1,0 +1,32 @@
+{
+  "name": "VHDL Development Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vide-software.v4pvhdlforprofessionals",
+        "mshr-h.veriloghdl",
+        "puorc.awesome-vhdl",
+        "surfer-project.surfer",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.associations": {
+          "*.vhd": "vhdl",
+          "*.vhdl": "vhdl"
+        }
+      }
+    }
+  },
+  
+  "workspaceFolder": "/workspaces/test-goertzel-vhdl",
+  
+  "postCreateCommand": "ghdl --version && echo 'Development environment ready!'",
+  
+  "remoteUser": "vscode"
+}

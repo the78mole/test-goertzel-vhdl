@@ -1,0 +1,31 @@
+# Build artifacts
+build/
+*.o
+*.cf
+work-obj93.cf
+*.ghw
+*.vcd
+
+# GHDL specific
+e~*.o
+*.exe
+
+# Waveform files (optional - uncomment if you don't want to track them)
+# *.ghw
+# *.vcd
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Generated diagrams (created from simulation output)
+# Kept: docs/timing_diagram*.json (legacy/optional)

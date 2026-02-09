@@ -34,13 +34,16 @@ For a detailed explanation of the algorithm, see [docs/GOERTZEL.md](docs/GOERTZE
 ├── src/                    # VHDL source files
 │   └── goertzel_filter.vhd # Main filter implementation
 ├── test/                   # Testbenches
-│   └── goertzel_filter_tb.vhd
+│   ├── goertzel_filter_tb.vhd        # Traditional testbench
+│   └── goertzel_filter_vunit_tb.vhd  # VUnit testbench (10 test cases)
 ├── docs/                   # Documentation
 │   ├── GOERTZEL.md         # Detailed algorithm description
+│   ├── VUNIT_TESTING.md    # VUnit testing guide
 │   ├── timing_diagram_*.json (legacy) # Optional WaveDrom sources
 ├── scripts/                # Automation scripts
 │   ├── generate_waveforms.py   # Creates diagrams from simulation
 │   └── generate_diagram.py     # Legacy WaveDrom generator
+├── run.py                  # VUnit test runner script
 ├── .devcontainer/          # Development container configuration
 │   ├── Dockerfile          # Container image definition
 │   └── devcontainer.json   # VS Code devcontainer config
@@ -136,6 +139,8 @@ python3 run.py '*test_target_frequency*'
 # List all available tests
 python3 run.py --list
 ```
+
+For more detailed information about VUnit testing, see [docs/VUNIT_TESTING.md](docs/VUNIT_TESTING.md).
 
 ## Usage Example
 

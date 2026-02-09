@@ -16,7 +16,7 @@ VHDL_SOURCES = $(SRC_DIR)/goertzel_filter.vhd
 VHDL_TESTBENCHES = $(TEST_DIR)/goertzel_filter_tb.vhd
 
 # Targets
-.PHONY: all clean test analyze elaborate run diagram
+.PHONY: all clean test analyze elaborate run diagram vunit vunit-gui
 
 all: test
 
@@ -70,21 +70,56 @@ diagram: $(BUILD_DIR) run
 		exit 1; \
 	fi
 
+# Run VUnit tests
+vunit:
+	@echo "Running VUnit tests..."
+	@if command -v python3 &> /dev/null; then \
+		if python3 -c "import vunit" 2>/dev/null; then \
+			python3 run.py --minimal; \
+		else \
+			echo "ERROR: VUnit not installed."; \
+			echo "Install with: pip3 install vunit_hdl"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "ERROR: Python3 not found."; \
+		exit 1; \
+	fi
+
+# Run VUnit tests with GUI
+vunit-gui:
+	@echo "Running VUnit tests with GUI..."
+	@if command -v python3 &> /dev/null; then \
+		if python3 -c "import vunit" 2>/dev/null; then \
+			python3 run.py -g; \
+		else \
+			echo "ERROR: VUnit not installed."; \
+			echo "Install with: pip3 install vunit_hdl"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "ERROR: Python3 not found."; \
+		exit 1; \
+	fi
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
+	rm -rf vunit_out
 	rm -f *.o *.cf work-obj93.cf
 
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  all       - Build and run tests (default)"
-	@echo "  analyze   - Analyze (compile) VHDL sources"
-	@echo "  elaborate - Elaborate (link) the testbench"
-	@echo "  run       - Run simulation with waveform generation"
-	@echo "  test      - Run tests without waveform (for CI)"
-	@echo "  check     - Check VHDL syntax"
-	@echo "  diagram   - Generate all timing diagrams (PNG + SVG)"
-	@echo "  clean     - Remove build artifacts"
-	@echo "  help      - Show this help message"
+	@echo "  all        - Build and run tests (default)"
+	@echo "  analyze    - Analyze (compile) VHDL sources"
+	@echo "  elaborate  - Elaborate (link) the testbench"
+	@echo "  run        - Run simulation with waveform generation"
+	@echo "  test       - Run tests without waveform (for CI)"
+	@echo "  check      - Check VHDL syntax"
+	@echo "  diagram    - Generate all timing diagrams (PNG + SVG)"
+	@echo "  vunit      - Run VUnit tests"
+	@echo "  vunit-gui  - Run VUnit tests with GUI"
+	@echo "  clean      - Remove build artifacts"
+	@echo "  help       - Show this help message"

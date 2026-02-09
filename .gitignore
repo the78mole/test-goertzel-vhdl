@@ -10,6 +10,9 @@ work-obj93.cf
 e~*.o
 *.exe
 
+# VUnit artifacts
+vunit_out/
+
 # Waveform files (optional - uncomment if you don't want to track them)
 # *.ghw
 # *.vcd

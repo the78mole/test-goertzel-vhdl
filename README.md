@@ -34,13 +34,16 @@ For a detailed explanation of the algorithm, see [docs/GOERTZEL.md](docs/GOERTZE
 ├── src/                    # VHDL source files
 │   └── goertzel_filter.vhd # Main filter implementation
 ├── test/                   # Testbenches
-│   └── goertzel_filter_tb.vhd
+│   ├── goertzel_filter_tb.vhd        # Traditional testbench
+│   └── goertzel_filter_vunit_tb.vhd  # VUnit testbench (10 test cases)
 ├── docs/                   # Documentation
 │   ├── GOERTZEL.md         # Detailed algorithm description
+│   ├── VUNIT_TESTING.md    # VUnit testing guide
 │   ├── timing_diagram_*.json (legacy) # Optional WaveDrom sources
 ├── scripts/                # Automation scripts
 │   ├── generate_waveforms.py   # Creates diagrams from simulation
 │   └── generate_diagram.py     # Legacy WaveDrom generator
+├── run.py                  # VUnit test runner script
 ├── .devcontainer/          # Development container configuration
 │   ├── Dockerfile          # Container image definition
 │   └── devcontainer.json   # VS Code devcontainer config
@@ -56,6 +59,8 @@ For a detailed explanation of the algorithm, see [docs/GOERTZEL.md](docs/GOERTZE
 
 - **GHDL**: Open-source VHDL simulator
 - **Make**: Build automation tool
+- **Python 3**: For VUnit test framework
+- **VUnit**: VHDL unit testing framework (optional but recommended)
 - **GTKWave** (optional): For viewing waveforms
 
 ### Installation
@@ -63,7 +68,10 @@ For a detailed explanation of the algorithm, see [docs/GOERTZEL.md](docs/GOERTZE
 On Ubuntu/Debian:
 ```bash
 sudo apt-get update
-sudo apt-get install ghdl gtkwave make
+sudo apt-get install ghdl gtkwave make python3 python3-pip
+
+# Install VUnit for advanced testing (recommended)
+pip3 install vunit_hdl
 ```
 
 ### Using the Devcontainer
@@ -83,8 +91,11 @@ The devcontainer includes the **Surfer** extension for viewing waveforms directl
 # Check VHDL syntax
 make check
 
-# Run all tests
+# Run all tests (traditional testbench)
 make test
+
+# Run VUnit tests (recommended - comprehensive test suite)
+make vunit
 
 # Run simulation with waveform generation
 make run
@@ -98,6 +109,38 @@ gtkwave build/wave.ghw
 # Clean build artifacts
 make clean
 ```
+
+#### VUnit Testing
+
+This project includes a comprehensive VUnit test suite with 10 test cases:
+
+1. **test_target_frequency_k10** - Validates detection of target frequency
+2. **test_off_target_frequency_k5** - Tests rejection of lower frequency
+3. **test_off_target_frequency_k15** - Tests rejection of higher frequency
+4. **test_off_target_frequency_k20** - Tests rejection of much higher frequency
+5. **test_low_frequency_k2** - Tests rejection of low frequency
+6. **test_high_frequency_k30** - Tests rejection of very high frequency
+7. **test_dc_signal** - Tests DC signal rejection
+8. **test_zero_input** - Tests zero input handling
+9. **test_reset_during_processing** - Tests reset behavior
+10. **test_busy_flag** - Tests busy flag behavior
+
+Run VUnit tests:
+```bash
+# Run all VUnit tests
+make vunit
+
+# Run VUnit tests with GUI (GTKWave)
+make vunit-gui
+
+# Run specific test
+python3 run.py '*test_target_frequency*'
+
+# List all available tests
+python3 run.py --list
+```
+
+For more detailed information about VUnit testing, see [docs/VUNIT_TESTING.md](docs/VUNIT_TESTING.md).
 
 ## Usage Example
 
